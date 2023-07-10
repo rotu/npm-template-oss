@@ -33,7 +33,7 @@ jobs:
         env:
           GITHUB_TOKEN: $\{{ secrets.GITHUB_TOKEN }}
         run: |
-          {{ rootNpxPath }} --offline template-oss-release-please "$\{{ github.ref_name }}" "$\{{ inputs.release-pr }}"
+          {{ rootNpxPath }} --offline template-oss-release-please --branch="$\{{ github.ref_name }}" --force-pr="$\{{ inputs.release-pr }}" --backport={{ isBackport }}
       - name: Post Pull Request Comment
         if: steps.release.outputs.pr-number
         uses: actions/github-script@v6
@@ -84,7 +84,7 @@ jobs:
           RELEASE_COMMENT_ID: $\{{ needs.release.outputs.comment-id }}
           GITHUB_TOKEN: $\{{ secrets.GITHUB_TOKEN }}
         run: |
-          {{ rootNpmPath }} exec --offline -- template-oss-release-manager --lockfile={{ lockfile }} --publish={{ publish }}
+          {{ rootNpmPath }} exec --offline -- template-oss-release-manager --lockfile={{ lockfile }} --publish={{ publish }} --backport={{ isBackport }}
           {{ rootNpmPath }} run rp-pull-request --ignore-scripts {{~#if allFlags}} {{ allFlags }}{{else}} --if-present{{/if}}
       - name: Commit
         id: commit

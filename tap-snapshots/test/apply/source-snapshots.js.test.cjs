@@ -874,7 +874,7 @@ jobs:
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx --offline template-oss-release-please "\${{ github.ref_name }}" "\${{ inputs.release-pr }}"
+          npx --offline template-oss-release-please --branch="\${{ github.ref_name }}" --force-pr="\${{ inputs.release-pr }}" --backport=false
       - name: Post Pull Request Comment
         if: steps.release.outputs.pr-number
         uses: actions/github-script@v6
@@ -988,7 +988,7 @@ jobs:
           RELEASE_COMMENT_ID: \${{ needs.release.outputs.comment-id }}
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm exec --offline -- template-oss-release-manager --lockfile=false --publish=false
+          npm exec --offline -- template-oss-release-manager --lockfile=false --publish=false --backport=false
           npm run rp-pull-request --ignore-scripts --if-present
       - name: Commit
         id: commit
@@ -1159,15 +1159,17 @@ jobs:
           }
 
           for release in $(echo '\${{ needs.release.outputs.releases }}' | jq -r '.[] | @base64'); do
-            name=$(echo "$release" | base64 --decode | jq -r .pkgName)
-            version=$(echo "$release" | base64 --decode | jq -r .version)
-            spec="$name@$version"
-            status=$(is_published "$spec")
-            if [[ "$status" -eq 1 ]]; then
-              echo "$spec ERROR"
-              EXIT_CODE=$status
+            function decode {
+              echo "$release" | base64 --decode | jq -r ".$1"
+            }
+
+            PKG_SPEC=$(decode "pkgName")@$(decode "version")
+
+            if [[ "$(is_published "$PKG_SPEC")" -eq 1 ]]; then
+              echo "$PKG_SPEC ERROR"
+              EXIT_CODE=$PKG_STATUS
             else
-              echo "$spec OK"
+              echo "$PKG_SPEC OK"
             fi
           done
 
@@ -2554,7 +2556,7 @@ jobs:
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx --offline template-oss-release-please "\${{ github.ref_name }}" "\${{ inputs.release-pr }}"
+          npx --offline template-oss-release-please --branch="\${{ github.ref_name }}" --force-pr="\${{ inputs.release-pr }}" --backport=false
       - name: Post Pull Request Comment
         if: steps.release.outputs.pr-number
         uses: actions/github-script@v6
@@ -2668,7 +2670,7 @@ jobs:
           RELEASE_COMMENT_ID: \${{ needs.release.outputs.comment-id }}
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm exec --offline -- template-oss-release-manager --lockfile=false --publish=false
+          npm exec --offline -- template-oss-release-manager --lockfile=false --publish=false --backport=false
           npm run rp-pull-request --ignore-scripts -ws -iwr --if-present
       - name: Commit
         id: commit
@@ -2839,15 +2841,17 @@ jobs:
           }
 
           for release in $(echo '\${{ needs.release.outputs.releases }}' | jq -r '.[] | @base64'); do
-            name=$(echo "$release" | base64 --decode | jq -r .pkgName)
-            version=$(echo "$release" | base64 --decode | jq -r .version)
-            spec="$name@$version"
-            status=$(is_published "$spec")
-            if [[ "$status" -eq 1 ]]; then
-              echo "$spec ERROR"
-              EXIT_CODE=$status
+            function decode {
+              echo "$release" | base64 --decode | jq -r ".$1"
+            }
+
+            PKG_SPEC=$(decode "pkgName")@$(decode "version")
+
+            if [[ "$(is_published "$PKG_SPEC")" -eq 1 ]]; then
+              echo "$PKG_SPEC ERROR"
+              EXIT_CODE=$PKG_STATUS
             else
-              echo "$spec OK"
+              echo "$PKG_SPEC OK"
             fi
           done
 
@@ -4086,7 +4090,7 @@ jobs:
         env:
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          npx --offline template-oss-release-please "\${{ github.ref_name }}" "\${{ inputs.release-pr }}"
+          npx --offline template-oss-release-please --branch="\${{ github.ref_name }}" --force-pr="\${{ inputs.release-pr }}" --backport=false
       - name: Post Pull Request Comment
         if: steps.release.outputs.pr-number
         uses: actions/github-script@v6
@@ -4200,7 +4204,7 @@ jobs:
           RELEASE_COMMENT_ID: \${{ needs.release.outputs.comment-id }}
           GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm exec --offline -- template-oss-release-manager --lockfile=false --publish=false
+          npm exec --offline -- template-oss-release-manager --lockfile=false --publish=false --backport=false
           npm run rp-pull-request --ignore-scripts -ws -iwr --if-present
       - name: Commit
         id: commit
@@ -4371,15 +4375,17 @@ jobs:
           }
 
           for release in $(echo '\${{ needs.release.outputs.releases }}' | jq -r '.[] | @base64'); do
-            name=$(echo "$release" | base64 --decode | jq -r .pkgName)
-            version=$(echo "$release" | base64 --decode | jq -r .version)
-            spec="$name@$version"
-            status=$(is_published "$spec")
-            if [[ "$status" -eq 1 ]]; then
-              echo "$spec ERROR"
-              EXIT_CODE=$status
+            function decode {
+              echo "$release" | base64 --decode | jq -r ".$1"
+            }
+
+            PKG_SPEC=$(decode "pkgName")@$(decode "version")
+
+            if [[ "$(is_published "$PKG_SPEC")" -eq 1 ]]; then
+              echo "$PKG_SPEC ERROR"
+              EXIT_CODE=$PKG_STATUS
             else
-              echo "$spec OK"
+              echo "$PKG_SPEC OK"
             fi
           done
 

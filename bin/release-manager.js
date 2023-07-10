@@ -4,6 +4,7 @@ const { Octokit } = require('@octokit/rest')
 const semver = require('semver')
 const mapWorkspaces = require('@npmcli/map-workspaces')
 const { join } = require('path')
+const getPublishTag = require('../lib/release-please/get-publish-tag.js')
 
 const log = (...logs) => console.error('LOG', ...logs)
 
@@ -127,6 +128,7 @@ const getPrReleases = async (pr) => {
     const prerelease = !!version.prerelease.length
     const tag = `${name ? `${name}-` : ''}v${rawVersion}`
     const workspace = workspaces[name]
+    const publishTag = getPublishTag({ backport: args.backport, version: rawVersion })
 
     return {
       name,
@@ -135,7 +137,7 @@ const getPrReleases = async (pr) => {
       version: rawVersion,
       major: version.major,
       url: `https://github.com/${pr.base.repo.full_name}/releases/tag/${tag}`,
-      flags: `${name ? `-w ${workspace}` : ''} ${prerelease ? `--tag prerelease` : ''}`.trim(),
+      flags: `${name ? `-w ${workspace}` : ''} --tag ${publishTag}`.trim(),
     }
   }
 

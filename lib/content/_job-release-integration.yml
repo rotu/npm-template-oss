@@ -7,22 +7,27 @@ permissions:
   deployments: write
   id-token: write
 steps:
-  - name: Checkout
-    uses: actions/checkout@v3
-    with:
-      ref: $\{{ fromJSON(needs.release.outputs.release).tagName }}
-  - name: Setup Node
-    uses: actions/setup-node@v3
-    with:
-      node-version: 18.x
-  - name: Install npm@latest
+  {{> stepGit jobCheckout=(obj ref="${{ fromJSON(needs.release.outputs.release).tagName }}") }}
+  {{> stepNode lockfile=false }}
+  - name: Set Publish Token
     run: |
-      npm i --prefer-online --no-fund --no-audit -g npm@latest
       npm config set '//registry.npmjs.org/:_authToken'=\${PUBLISH_TOKEN}
   - name: Publish
     env:
       PUBLISH_TOKEN: $\{{ secrets.PUBLISH_TOKEN }}
-    run: npm publish --provenance
+    run: |
+      for release in $(echo '$\{{ needs.release.outputs.releases }}' | jq -r '.[] | @base64'); do
+        function decode {
+          echo "$release" | base64 --decode | jq -r ".$1"
+        }
+
+        PUBLISH_FLAGS="--provenance --tag=$(decode "publishTag")"
+        if [[ "$(decode "isWorkspace")" == "false" ]]; then
+          PUBLISH_FLAGS="$PUBLISH_FLAGS --workspace=$(decode "pkgName")"
+        fi
+
+        npm publish $PUBLISH_FLAGS
+      done
 {{else}}
 runs-on: ubuntu-latest
 defaults:
@@ -43,15 +48,17 @@ steps:
       }
 
       for release in $(echo '$\{{ needs.release.outputs.releases }}' | jq -r '.[] | @base64'); do
-        name=$(echo "$release" | base64 --decode | jq -r .pkgName)
-        version=$(echo "$release" | base64 --decode | jq -r .version)
-        spec="$name@$version"
-        status=$(is_published "$spec")
-        if [[ "$status" -eq 1 ]]; then
-          echo "$spec ERROR"
-          EXIT_CODE=$status
+        function decode {
+          echo "$release" | base64 --decode | jq -r ".$1"
+        }
+
+        PKG_SPEC=$(decode "pkgName")@$(decode "version")
+
+        if [[ "$(is_published "$PKG_SPEC")" -eq 1 ]]; then
+          echo "$PKG_SPEC ERROR"
+          EXIT_CODE=$PKG_STATUS
         else
-          echo "$spec OK"
+          echo "$PKG_SPEC OK"
         fi
       done
 

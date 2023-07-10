@@ -4,7 +4,19 @@ const core = require('@actions/core')
 const main = require('../lib/release-please/index.js')
 
 const dryRun = !process.env.CI
-const [branch, forcePullRequest] = process.argv.slice(2)
+const args = process.argv.slice(2).reduce((acc, a) => {
+  const [k, v = ''] = a.replace(/^--/, '').split('=')
+  if (v === 'true') {
+    acc[k] = true
+  } else if (v === 'false') {
+    acc[k] = false
+  } else if (/^\d+$/.test(v)) {
+    acc[k] = Number.parseInt(v.trim())
+  } else if (v) {
+    acc[k] = v.trim()
+  }
+  return acc
+}, {})
 
 const debugPr = (val) => {
   if (dryRun) {
@@ -44,8 +56,9 @@ main({
   token: process.env.GITHUB_TOKEN,
   repo: process.env.GITHUB_REPOSITORY,
   dryRun,
-  branch,
-  forcePullRequest: forcePullRequest ? +forcePullRequest : null,
+  branch: args.branch,
+  backport: args.backport,
+  forcePullRequest: args['force-pr'],
 }).then(({ pr, release, releases }) => {
   if (pr) {
     debugPr(pr)
