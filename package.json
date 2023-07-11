@@ -64,6 +64,7 @@
   "devDependencies": {
     "@npmcli/eslint-config": "^4.0.0",
     "@npmcli/template-oss": "file:./",
+    "nock": "^13.3.1",
     "tap": "^16.0.0"
   },
   "tap": {
@@ -74,7 +75,8 @@
       "--exclude",
       "tap-snapshots/**"
     ],
-    "test-ignore": "^(workspace/test-workspace)/"
+    "test-ignore": "^(workspace/test-workspace)/",
+    "node-arg": ["--no-experimental-fetch"]
   },
   "templateOSS": {
     "//@npmcli/template-oss": "This file is partially managed by @npmcli/template-oss. Edits may be overwritten.",

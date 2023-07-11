@@ -1,9 +1,8 @@
 #!/usr/bin/env node
 
 const core = require('@actions/core')
-const main = require('../lib/release-please/index.js')
+const ReleasePlease = require('../lib/release/release-please.js')
 
-const dryRun = !process.env.CI
 const args = process.argv.slice(2).reduce((acc, a) => {
   const [k, v = ''] = a.replace(/^--/, '').split('=')
   if (v === 'true') {
@@ -18,50 +17,19 @@ const args = process.argv.slice(2).reduce((acc, a) => {
   return acc
 }, {})
 
-const debugPr = (val) => {
-  if (dryRun) {
-    console.log('PR:', val.title.toString())
-    console.log('='.repeat(40))
-    console.log(val.body.toString())
-    console.log('='.repeat(40))
-    for (const update of val.updates.filter(u => u.updater.changelogEntry)) {
-      console.log('CHANGELOG:', update.path)
-      console.log('-'.repeat(40))
-      console.log(update.updater.changelogEntry)
-      console.log('-'.repeat(40))
-    }
-    for (const update of val.updates.filter(u => u.updater.rawContent)) {
-      console.log('package:', update.path)
-      console.log('-'.repeat(40))
-      console.log(JSON.parse(update.updater.rawContent).name)
-      console.log(JSON.parse(update.updater.rawContent).version)
-      console.log('-'.repeat(40))
-    }
-  }
-}
-
-const debugRelease = (val) => {
-  if (dryRun) {
-    console.log('ROOT RELEASE:', JSON.stringify(val, null, 2))
-  }
-}
-
-const debugReleases = (val) => {
-  if (dryRun) {
-    console.log('ALL RELEASES:', JSON.stringify(val, null, 2))
-  }
-}
-
-main({
+ReleasePlease.create({
   token: process.env.GITHUB_TOKEN,
   repo: process.env.GITHUB_REPOSITORY,
-  dryRun,
+  runId: process.env.GITHUB_RUN_ID,
   branch: args.branch,
   backport: args.backport,
-  forcePullRequest: args['force-pr'],
-}).then(({ pr, release, releases }) => {
+  force: args.force,
+}).then(({ commentId, pr, release, releases }) => {
+  if (commentId) {
+    core.setOutput('comment-id', commentId)
+  }
+
   if (pr) {
-    debugPr(pr)
     core.setOutput('pr', JSON.stringify(pr))
     core.setOutput('pr-branch', pr.headBranchName)
     core.setOutput('pr-number', pr.number)
@@ -69,20 +37,14 @@ main({
   }
 
   if (release) {
-    debugRelease(release)
     core.setOutput('release', JSON.stringify(release))
   }
 
   if (releases) {
-    debugReleases(releases)
     core.setOutput('releases', JSON.stringify(releases))
   }
 
   return null
 }).catch(err => {
-  if (dryRun) {
-    console.error(err)
-  } else {
-    core.setFailed(`failed: ${err}`)
-  }
+  core.setFailed(`failed: ${err}`)
 })
